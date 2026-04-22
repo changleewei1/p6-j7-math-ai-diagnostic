@@ -1,36 +1,211 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# p6-j7-math-ai-diagnostic
 
-## Getting Started
+小六升國一數學 **AI 診斷測驗系統** — 已完成 **第 1～3 段（資料層、測驗與基本報告）** 及 **第 4 段（招生型報告、規則式診斷敘事、圖表、影片推薦、內部後台、行銷同意欄位等）**；**第 5 段** 尚未實作：LINE 串接、完整 CRM、多角色權限、自適應 v3 等。
 
-First, run the development server:
+## 技術棧
+
+- [Next.js](https://nextjs.org) 14+（App Router，本倉庫目前使用 16.x）
+- TypeScript
+- [Tailwind CSS](https://tailwindcss.com) 4
+- [Supabase](https://supabase.com)（PostgreSQL，透過 [@supabase/supabase-js](https://github.com/supabase/supabase-js)，無 ORM）
+- [Zod](https://zod.dev) + [React Hook Form](https://react-hook-form.com)（註冊表單）
+
+## 第 1 段已完成內容
+
+- `supabase/migrations/`：初始 schema（表格、索引、CHECK、`question_bank` 之 `updated_at` 觸發；RLS 僅附註 TODO，未強制啟用）
+- `types/`：`database.ts`、`quiz.ts`、`analysis.ts`
+- `lib/constants/quiz.ts`：模組與狀態常數
+- `lib/supabase/`：瀏覽器／server／admin（service role）client 分離；`env.ts` 集中讀取環境變數，**避免在模組頂層 throw 導致建置失敗**
+- `data/questionBank.seed.json`：至少 30 題、五大模組 × 三難度
+- `scripts/import-question-bank.ts`：以 service role 匯入題庫（依 `module + difficulty + prompt` 去重）
+
+## 第 2 段已完成內容
+
+- **頁面**：`/` 首頁、`/register` 註冊、`/quiz/[sessionId]` 測驗（載入時啟動抽題並顯示第一題）
+- **API**：
+  - `POST /api/register`：建立 `students` / `parents` / `test_sessions`（**僅 server 端** `createAdminSupabaseClient()`）
+  - `POST /api/quiz/start`：依題庫抽 15 題寫入 `session_questions`（已存在則不重抽）
+  - `GET /api/quiz/[sessionId]/current`：回傳「下一道未作答題」（`question_order` 最小且尚未出現在 `answers`；若皆已作答則 `completed: true`）
+- **邏輯模組**：`lib/quiz/buildInitialSessionQuestions.ts`、`lib/quiz/getCurrentQuestion.ts`、`lib/quiz/parseQuestionChoices.ts`
+- **驗證**：`lib/validations/register.ts`、`lib/validations/quiz.ts`
+- **前端元件**：`components/home/*`、`components/register/RegisterForm.tsx`、`components/quiz/*`、`components/ui/SectionCard.tsx`
+
+## 如何測試 `/register` 與建立 session
+
+1. 依「環境變數」設定 `.env.local`（需含 `SUPABASE_SERVICE_ROLE_KEY`，API 才能寫入資料庫）。
+2. 確認已執行 migration 且已 `npm run seed:questions` 匯入題庫（五大模組 × 每難度至少 1 題，否則 `POST /api/quiz/start` 會回 422）。
+3. 啟動開發伺服器：`npm run dev`。
+4. 瀏覽 `http://localhost:3000/register`，填寫必填欄位並勾選個資同意後送出。
+5. 成功後會導向 `/quiz/[sessionId]`；該頁會自動呼叫 `POST /api/quiz/start` 再 `GET /api/quiz/.../current`，應看到第 1 題與進度條。
+
+## 如何初始化 quiz 題目
+
+- 進入 `/quiz/[sessionId]` 時，前端會呼叫 **`POST /api/quiz/start`**（body: `{ "sessionId": "<uuid>" }`）。
+- 若該 session 尚無 `session_questions`，後端會自 `question_bank`（`is_active = true`）依 **每模組 easy / medium / hard 各 1 題** 隨機抽滿 15 題並寫入；若 `session_questions` 已有資料則 **不會重抽**（`existing: true`）。
+
+## 環境變數
+
+1. 複製範本：
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. 至 Supabase 專案 **Project Settings → API** 填入：
+
+   - `NEXT_PUBLIC_SUPABASE_URL`：專案 URL（例如 `https://xxxx.supabase.co`）
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`：anon public（第 2 段 API 主要用 service role，但建議一併設定）
+   - `SUPABASE_SERVICE_ROLE_KEY`：service role（**僅本機與加密部署環境**，不可曝露在前端或 `NEXT_PUBLIC_`）
+
+3. 修改 `.env.local` 後請重啟 `npm run dev`。
+
+## 執行資料庫 migration
+
+依你使用的方式擇一：
+
+**A. Supabase 網頁 SQL Editor**  
+打開專案 → SQL → 貼上 `supabase/migrations/202604220001_init_schema.sql` 內容後執行。
+
+**B. Supabase CLI**（本機有安裝時）
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+supabase db push
+# 或 supabase migration up
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+實際指令以專案是否已 `supabase link` 為準，請參考 [Supabase 文件](https://supabase.com/docs/guides/cli/local-development)。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 匯入題庫 seed
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. 確認已跑過 migration、`.env.local` 已具備 **同專案** 之 `NEXT_PUBLIC_SUPABASE_URL` 與 `SUPABASE_SERVICE_ROLE_KEY`（匯入腳本不強制需要 anon 金鑰）。
 
-## Learn More
+2. 安裝依賴與執行：
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   npm run seed:questions
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. 腳本會自 `data/questionBank.seed.json` 讀取；若同 `module + difficulty + prompt` 已存在則**略過**，並於終端列印匯入／略過／失敗筆數。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 第 3 段已完成內容
 
-## Deploy on Vercel
+### 作答流程（瀏覽器）
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. `/quiz/[sessionId]`：先 `POST /api/quiz/start`，再 `GET /api/quiz/[sessionId]/current`。
+2. 選答案 → 選信心度（high / medium / low）→「送出並前往下一題」。
+3. `POST /api/quiz/[sessionId]/answer` 寫入 `answers`（含 `shown_at`、`answered_at`、`time_spent_seconds`，不洩漏正解）。
+4. 若尚有小題未答：再 `GET .../current` 取得下一題。
+5. 若本題為最後一題：answer 回傳 `completed: true` → `POST /api/quiz/[sessionId]/finish`（規則式分析、`summary_json`、`recommendations`、狀態 `completed`）→ 導向 `/report/[sessionId]`。
+6. 若重新進入測驗頁時已全答完但未寫入完成狀態：`current` 會 `completed: true`，前端會自動補呼叫 `finish` 再進報告。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### API 一覽（第 3 段新增）
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| `GET` | `/api/quiz/[sessionId]/current` | 下一道未答題；全答完則 `completed: true`、`question: null`（不洩漏正解欄位） |
+| `POST` | `/api/quiz/[sessionId]/answer` | 驗證題目屬於場次、未重複作答，寫入 `answers`，回傳是否已全答完 |
+| `POST` | `/api/quiz/[sessionId]/finish` | 驗證題數，`analyzeSession` 後合併敘事等擴充寫入 `summary_json`、寫入 `recommendations`、更新 `test_sessions`；可重複呼叫（已完成則回傳既有摘要） |
+| `GET` | `/api/report/[sessionId]` | 學生姓名、完整 `summary_json`、recommendations、**影片建議** `videos`（最多 5 筆）等；未完成則 `reportReady: false` |
+
+### 後端模組
+
+- `lib/quiz/getCurrentQuestion.ts`：`getNextUnansweredSessionQuestion`
+- `lib/validations/answer.ts`：送答 body 驗證
+- `lib/analysis/analyzeSession.ts`、`lib/analysis/generateBasicRecommendations.ts`
+- `types/sessionAnalysis.ts`：`SessionSummaryJsonV1` 結構
+
+### 前端
+
+- `components/quiz/QuizSessionClient.tsx`、`QuizQuestionCard.tsx`、`QuizProgressBar.tsx`：送答、防重送、完成導向
+- `components/report/ReportView.tsx` 等、`app/report/[sessionId]/page.tsx`：報告介面
+
+## 第 4 段：招生型報告、診斷敘事、後台與行銷欄位
+
+### 已完成功能
+
+- **報告 UI**：頂部 Hero、規則式「診斷摘要」六段文案（`lib/analysis/generateNarrativeSummary.ts`）、五模組卡片、**Recharts** 三圖表（正答率、用時、信心）、風險標籤、課程建議、**影片建議**（`video_recommendations`＋`lib/analysis/selectVideoRecommendations.ts`）、招生 **CTA**（已完成，見下方「預約試聽與聯絡資訊」）。
+- **分析擴充**：`finish` 在 `analyzeSession` 之後，合併敘事、强弱模組、銜接度、建議要點，寫入 `summary_json`（`lib/analysis/enrichSessionReport.ts`）。
+- **行銷同意**：`parents.marketing_opt_in`（`supabase/migrations/202604220002_add_marketing_opt_in.sql`），與 `consent`（個資）分欄；註冊表單以 `marketingOptIn` 送出。
+- **內部後台**：`/admin` 總覽、`/admin/sessions` 列表（關鍵字／狀態／跟進篩選）、`/admin/sessions/[id]` 詳情與**跟進狀態**更新（`follow_up_status`）。存取保護：`middleware.ts` ＋ Cookie（以 `ADMIN_DASHBOARD_SECRET` 產生 HMAC cookie）；首次請使用 **`/admin?secret=你的密碼`** 登入。
+- **API（admin）**：皆使用 `createAdminSupabaseClient()`，且於各 route handler 內建立。摘要如下：
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| `GET` | `/api/admin/overview` | 總人數、完成數、平均分、等第分佈、弱點模組排行、跟進分佈、最近 10 筆 |
+| `GET` | `/api/admin/sessions` | 分頁列表；query：`q`, `status`, `followUp`, `page` |
+| `GET` | `/api/admin/sessions/[sessionId]` | 學生／家長、摘要、建議、作答列 |
+| `PATCH` | `/api/admin/sessions/[sessionId]/follow-up` | body: `{ "followUpStatus": "未追蹤" \| "已聯絡" \| "已預約" \| "已報名" }` |
+
+### 預約試聽與聯絡資訊（報告 CTA）
+
+- **報告頁 CTA**（`components/report/ReportCtaSection.tsx`）：**聯絡補習班** 外連官方 LINE、**預約試聽** 導向 `/booking`（含 `?sessionId=` 時一併帶入診斷工作階段）、**重新測驗** → `/register`、**返回首頁** → `/`。區塊內嵌 **LINE 諮詢** 與 **服務電話**（可點 `tel:`），實際網址與號碼集中於 **`lib/constants/contact.ts`**（亦用於 `ContactInfoCard`、預約成功頁）。
+- **預約頁**：`app/booking/page.tsx`，表單元件 `components/booking/BookingForm.tsx`、成功狀態 `BookingSuccessCard.tsx`；表單樣式與註冊頁一致（Zod、React Hook Form、繁中錯誤、API 錯誤提示）。查詢參數 **`/booking?sessionId=＜uuid＞`**（可選）：會讀取 `GET /api/report/[sessionId]`，預填學生姓名，並依第一則學習建議標題**粗步預選**「想了解的課程」。
+- **API**：`POST /api/booking` — 驗證後寫入 `bookings`（`createAdminSupabaseClient()` 僅在 handler 內建立），成功回傳 `{ success: true, bookingId }`。「願意接受聯絡若為否」會併入備註文字；`session_id` 可選、對應診斷場次，需執行 migration `202604220003_booking_session_id.sql`。
+- **如何修改官方 LINE 與電話**：僅需編輯 **`lib/constants/contact.ts`** 的 `OFFICIAL_LINE_URL`、`CONTACT_PHONE`（`tel:` 用）、`CONTACT_PHONE_DISPLAY`（畫面顯示用）。
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| `POST` | `/api/booking` | 預約試聽表單；body 見 `lib/validations/booking.ts`（`BookingBodyInput`） |
+
+### migration：marketing opt-in
+
+1. 在 Supabase SQL Editor 執行 `supabase/migrations/202604220002_add_marketing_opt_in.sql`（或併入既有專案 workflow）。
+2. 重啟 `npm run dev`，註冊與管理後台讀寫家長行銷欄位才會成功。
+
+### migration：bookings 關聯診斷工作階段
+
+若需讓 `POST /api/booking` 寫入 `bookings.session_id`（從報告導向預約），請在 Supabase 執行 `supabase/migrations/202604220003_booking_session_id.sql`。未執行時，若 API insert 欄位不存在會失敗，請一併更新本機與遠端 schema。
+
+### 內部後台使用方式
+
+1. 在 `.env.local` 設定 **`ADMIN_DASHBOARD_SECRET`**（自訂足夠長的隨機字串）。
+2. 重啟開發伺服器。
+3. 瀏覽器開啟 **`http://localhost:3000/admin?secret=＜與 .env 相同＞`**；成功後會寫入 HttpOnly cookie，之後可直開 `/admin`（效期 7 日）。
+4. 未帶正確密碼、亦無有效 cookie 時，前台後台回 **401**、API 回 JSON `未授權`。**請勿**將此密碼寫入前端或 `NEXT_PUBLIC_` 變數。
+
+### 測試報告、影片、跟進
+
+- **完整報告**：新完成的測驗經 `POST /api/quiz/.../finish` 後，`summary_json` 含敘事等擴充欄位，再開 `/report/[sessionId]` 應見新版版面。
+- **舊筆測驗**（第 3 段前產生）：可無敘事段落，但仍有模組分數、圖表、建議；或請受測者**重測**以產生新摘要。
+- **影片**：`npm run seed:videos` 或依 `data/videoRecommendations.seed.json` 手動在 Supabase `video_recommendations` 建資料；`GET /api/report/[sessionId]` 會帶入 `videos` 陣列（最多 5 筆，弱點模組優先）。
+
+### 第 5 段預留（尚未實作）
+
+- LINE Flex 與推播
+- 完整 CRM、CSV 匯出、多角色權限與帳密登入
+- 自適應測驗 **v3** 引擎
+- 題庫後台 **CRUD**
+- RLS 全開與審計日誌
+- 家長帳密系統
+
+## 目錄結構（摘要）
+
+```text
+app/
+  page.tsx, register/, quiz/, report/, booking/, admin/
+  api/register, api/quiz/..., api/report/..., api/booking, api/admin/...
+components/   home, register, quiz, report, booking, admin, ui
+lib/
+  validations/, quiz/, analysis/, admin/, constants/, supabase/
+middleware.ts（/admin 與 /api/admin 之簡化驗證）
+types/   sessionAnalysis, database, quiz, api
+scripts/ import-question-bank.ts, import-video-recommendations.ts
+data/    questionBank.seed.json, videoRecommendations.seed.json
+supabase/migrations/
+```
+
+### npm scripts 補充
+
+- `npm run seed:videos`：匯入 `data/videoRecommendations.seed.json` 至 `video_recommendations`（可重複執行，以 module+title+url 去重）。
+
+## 開發
+
+```bash
+npm install
+npm run dev
+```
+
+## License
+
+Private project.

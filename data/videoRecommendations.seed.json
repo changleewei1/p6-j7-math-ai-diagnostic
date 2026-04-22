@@ -1,0 +1,37 @@
+[
+  {
+    "module": "數感與基本運算",
+    "title": "小六銜接：位值與四則節奏",
+    "url": "https://example.com/placeholder-video",
+    "description": "示範：請替換成補習班實際或自有影片連結。",
+    "is_active": true
+  },
+  {
+    "module": "分數/小數/比例",
+    "title": "分數與比例圖解入門",
+    "url": "https://example.com/placeholder-video",
+    "description": "以生活情境帶出量的比與圖表閱讀。",
+    "is_active": true
+  },
+  {
+    "module": "代數前導",
+    "title": "符號化與關係式起頭",
+    "url": "https://example.com/placeholder-video",
+    "description": "從關鍵字到以字母表示、簡化式子。",
+    "is_active": true
+  },
+  {
+    "module": "幾何與圖形",
+    "title": "圖形性質與小證明思維",
+    "url": "https://example.com/placeholder-video",
+    "description": "在圖上標示條件、辨認性質的練習。",
+    "is_active": true
+  },
+  {
+    "module": "文字題與閱讀理解",
+    "title": "應用題：兩步驟敘事拆解",
+    "url": "https://example.com/placeholder-video",
+    "description": "讀完再下筆、先找已知與所求。",
+    "is_active": true
+  }
+]
