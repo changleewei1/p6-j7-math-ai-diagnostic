@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CONTACT_PHONE, CONTACT_PHONE_DISPLAY, OFFICIAL_LINE_URL } from "@/lib/constants/contact";
 
 export function Footer() {
@@ -26,6 +27,15 @@ export function Footer() {
           </a>
         </p>
         <p className="pt-2 text-xs leading-relaxed text-slate-400">小六升國一數學 AI 診斷系統</p>
+        <p className="pt-1">
+          <Link
+            href="/admin"
+            className="text-[11px] text-slate-400/80 no-underline transition hover:text-slate-500 hover:underline"
+            prefetch={false}
+          >
+            管理入口
+          </Link>
+        </p>
       </div>
     </footer>
   );

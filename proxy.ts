@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const COOKIE = "admin_gate";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (!path.startsWith("/admin") && !path.startsWith("/api/admin")) {
     return NextResponse.next();

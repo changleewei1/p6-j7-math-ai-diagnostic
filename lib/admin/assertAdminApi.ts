@@ -2,7 +2,7 @@ import { verifyAdminCookie } from "@/lib/admin/adminCookieToken";
 import { NextResponse } from "next/server";
 
 /**
- * Admin API route handler 內使用；與 middleware 雙重檢查 cookie
+ * Admin API route handler 內使用；與 proxy 雙重檢查 cookie
  */
 export async function assertAdminOr401(
   cookieValue: string | null | undefined,

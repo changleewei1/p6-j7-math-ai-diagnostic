@@ -127,7 +127,7 @@ supabase db push
 - **報告 UI**：頂部 Hero、規則式「診斷摘要」六段文案（`lib/analysis/generateNarrativeSummary.ts`）、五模組卡片、**Recharts** 三圖表（正答率、用時、信心）、風險標籤、課程建議、**影片建議**（`video_recommendations`＋`lib/analysis/selectVideoRecommendations.ts`）、招生 **CTA**（已完成，見下方「預約試聽與聯絡資訊」）。
 - **分析擴充**：`finish` 在 `analyzeSession` 之後，合併敘事、强弱模組、銜接度、建議要點，寫入 `summary_json`（`lib/analysis/enrichSessionReport.ts`）。
 - **行銷同意**：`parents.marketing_opt_in`（`supabase/migrations/202604220002_add_marketing_opt_in.sql`），與 `consent`（個資）分欄；註冊表單以 `marketingOptIn` 送出。
-- **內部後台**：`/admin` 總覽、`/admin/sessions` 列表（關鍵字／狀態／跟進篩選）、`/admin/sessions/[id]` 詳情與**跟進狀態**更新（`follow_up_status`）。存取保護：`middleware.ts` ＋ Cookie（以 `ADMIN_DASHBOARD_SECRET` 產生 HMAC cookie）；首次請使用 **`/admin?secret=你的密碼`** 登入。
+- **內部後台**：`/admin` 總覽、`/admin/sessions` 列表（關鍵字／狀態／跟進篩選）、`/admin/sessions/[id]` 詳情與**跟進狀態**更新（`follow_up_status`）。存取保護：`proxy.ts` ＋ Cookie（以 `ADMIN_DASHBOARD_SECRET` 產生 HMAC cookie）；首次請使用 **`/admin?secret=你的密碼`** 登入。
 - **API（admin）**：皆使用 `createAdminSupabaseClient()`，且於各 route handler 內建立。摘要如下：
 
 | 方法 | 路徑 | 說明 |
@@ -164,6 +164,12 @@ supabase db push
 3. 瀏覽器開啟 **`http://localhost:3000/admin?secret=＜與 .env 相同＞`**；成功後會寫入 HttpOnly cookie，之後可直開 `/admin`（效期 7 日）。
 4. 未帶正確密碼、亦無有效 cookie 時，前台後台回 **401**、API 回 JSON `未授權`。**請勿**將此密碼寫入前端或 `NEXT_PUBLIC_` 變數。
 
+**上線後**：請將 `localhost` 換成實際網域，例如：  
+`https://你的網域/admin?secret=＜與 Vercel／主機上 `ADMIN_DASHBOARD_SECRET` 相同＞`  
+（查詢參數的 **值** 就是環境變數 `ADMIN_DASHBOARD_SECRET` 的內容。）
+
+**首頁入口**：招生首頁 Footer 最底有低調文字連結「**管理入口**」導向 `/admin`。若瀏覽器尚無有效後台 Cookie，點入後仍會 401；請在網址列使用 **`/admin?secret=＜值＞`**，其中 **`secret` 的查詢值** 須等於環境變數 **`ADMIN_DASHBOARD_SECRET`** 所設定的密碼字串（不是變數名稱本身）。成功後 7 日內可再直接造訪 `/admin`。
+
 ### 測試報告、影片、跟進
 
 - **完整報告**：新完成的測驗經 `POST /api/quiz/.../finish` 後，`summary_json` 含敘事等擴充欄位，再開 `/report/[sessionId]` 應見新版版面。
@@ -188,7 +194,7 @@ app/
 components/   home, register, quiz, report, booking, admin, ui
 lib/
   validations/, quiz/, analysis/, admin/, constants/, supabase/
-middleware.ts（/admin 與 /api/admin 之簡化驗證）
+proxy.ts（/admin 與 /api/admin 之簡化驗證）
 types/   sessionAnalysis, database, quiz, api
 scripts/ import-question-bank.ts, import-video-recommendations.ts
 data/    questionBank.seed.json, videoRecommendations.seed.json
