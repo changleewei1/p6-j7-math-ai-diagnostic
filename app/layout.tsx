@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-// 在 TS 入口匯入 Tailwind，由 Node/ bundler 從專案 node_modules 解析；
-// 勿在全域 CSS 內用 @import "tailwindcss"（在部分環境會誤以 ~/Desktop 為 context 而解析失敗）。
-import "tailwindcss/index.css";
 import "./globals.css";
 
 const geistSans = Geist({
