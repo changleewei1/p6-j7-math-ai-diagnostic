@@ -1,3 +1,4 @@
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -22,6 +23,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link href="/" className="text-slate-500 hover:text-slate-800">
               前台首頁
             </Link>
+            <AdminLogoutButton />
           </nav>
         </div>
       </header>

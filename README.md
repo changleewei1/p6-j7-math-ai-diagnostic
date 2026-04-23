@@ -59,6 +59,19 @@
 
 3. 修改 `.env.local` 後請重啟 `npm run dev`。
 
+4. **部署到 Vercel 時**，請在專案 **Settings → Environment Variables** 填入與上方相同鍵名（Production／Preview 視需要勾選），儲存後對最新一筆部署 **Redeploy** 才會套用。
+
+### Vercel：專案重新命名後請改網址
+
+若 Vercel 專案曾由舊名稱改名（例如由 `project-a1a4s` 改為 `p6-j7-math-diagnostic`），**舊子網域**（如 `project-a1a4s.vercel.app`）**通常不再指向目前部署**，瀏覽會出現平台層級 **`404: NOT_FOUND`**（非本專案 Next 的錯誤頁）。
+
+請改為只使用**目前專案**的網址：
+
+1. Vercel → 選已改名的專案（例如 **p6-j7-math-diagnostic**）。
+2. **Settings → Domains**：以清單中的 **Production** 網域為準；或到 **Deployments** → 最新一筆 **Ready** → 點 **Visit**，以網址列顯示的站點為準。
+3. 更新書籤／分享連結，**勿再使用舊的 `*.vercel.app`**。
+4. 若設定與 Git 仍正確但異常，可對最新部署 **Redeploy**；並確認 **Settings → Git** 仍連結本倉庫 `changleewei1/p6-j7-math-ai-diagnostic`。
+
 ## 執行資料庫 migration
 
 依你使用的方式擇一：
@@ -127,7 +140,7 @@ supabase db push
 - **報告 UI**：頂部 Hero、規則式「診斷摘要」六段文案（`lib/analysis/generateNarrativeSummary.ts`）、五模組卡片、**Recharts** 三圖表（正答率、用時、信心）、風險標籤、課程建議、**影片建議**（`video_recommendations`＋`lib/analysis/selectVideoRecommendations.ts`）、招生 **CTA**（已完成，見下方「預約試聽與聯絡資訊」）。
 - **分析擴充**：`finish` 在 `analyzeSession` 之後，合併敘事、强弱模組、銜接度、建議要點，寫入 `summary_json`（`lib/analysis/enrichSessionReport.ts`）。
 - **行銷同意**：`parents.marketing_opt_in`（`supabase/migrations/202604220002_add_marketing_opt_in.sql`），與 `consent`（個資）分欄；註冊表單以 `marketingOptIn` 送出。
-- **內部後台**：`/admin` 總覽、`/admin/sessions` 列表（關鍵字／狀態／跟進篩選）、`/admin/sessions/[id]` 詳情與**跟進狀態**更新（`follow_up_status`）。存取保護：`proxy.ts` ＋ Cookie（以 `ADMIN_DASHBOARD_SECRET` 產生 HMAC cookie）；首次請使用 **`/admin?secret=你的密碼`** 登入。
+- **內部後台**：`/admin` 總覽、`/admin/sessions` 列表（關鍵字／狀態／跟進篩選）、`/admin/sessions/[id]` 詳情與**跟進狀態**更新（`follow_up_status`）。存取保護：`proxy.ts` ＋ HttpOnly Cookie **`admin_gate`**（以 `ADMIN_DASHBOARD_SECRET` 經 HMAC 產生 cookie 值）。**建議**：從首頁 Footer「**管理入口**」進入 **`/admin-login`** 輸入密碼；亦可沿用 **`/admin?secret=…`** 一次寫入 cookie。
 - **API（admin）**：皆使用 `createAdminSupabaseClient()`，且於各 route handler 內建立。摘要如下：
 
 | 方法 | 路徑 | 說明 |
@@ -136,6 +149,8 @@ supabase db push
 | `GET` | `/api/admin/sessions` | 分頁列表；query：`q`, `status`, `followUp`, `page` |
 | `GET` | `/api/admin/sessions/[sessionId]` | 學生／家長、摘要、建議、作答列 |
 | `PATCH` | `/api/admin/sessions/[sessionId]/follow-up` | body: `{ "followUpStatus": "未追蹤" \| "已聯絡" \| "已預約" \| "已報名" }` |
+| `POST` | `/api/admin/login` | body: `{ "secret": "與 ADMIN_DASHBOARD_SECRET 相同" }`；成功寫入 `admin_gate` cookie |
+| `POST` | `/api/admin/logout` | 清除 `admin_gate` cookie |
 
 ### 預約試聽與聯絡資訊（報告 CTA）
 
@@ -159,16 +174,16 @@ supabase db push
 
 ### 內部後台使用方式
 
-1. 在 `.env.local` 設定 **`ADMIN_DASHBOARD_SECRET`**（自訂足夠長的隨機字串）。
+1. 在 `.env.local`（與上線主機的環境變數）設定 **`ADMIN_DASHBOARD_SECRET`**（自訂足夠長的隨機字串）。**禁止**以 `NEXT_PUBLIC_` 暴露到前端；密碼僅在伺服器端與你輸入的欄位比對。
 2. 重啟開發伺服器。
-3. 瀏覽器開啟 **`http://localhost:3000/admin?secret=＜與 .env 相同＞`**；成功後會寫入 HttpOnly cookie，之後可直開 `/admin`（效期 7 日）。
-4. 未帶正確密碼、亦無有效 cookie 時，前台後台回 **401**、API 回 JSON `未授權`。**請勿**將此密碼寫入前端或 `NEXT_PUBLIC_` 變數。
+3. **建議（一般）**：開啟 **`http://localhost:3000/admin-login`**，輸入與 `ADMIN_DASHBOARD_SECRET` **相同**的密碼，按「進入後台」；成功後寫入 HttpOnly Cookie **`admin_gate`**（`path: /`、**效期 7 日**、 production 下 **`Secure`**），之後可直接造訪 `/admin`。
+4. **替代（手動查詢參數，與舊行為相同）**：**`/admin?secret=＜與 .env 相同＞`** 仍會導回並寫入同一顆 `admin_gate` cookie。
+5. 後台頁首有「**登出**」，或呼叫 **`POST /api/admin/logout`**，可清除 `admin_gate`；再進後台需重新至 `/admin-login` 或帶 `?secret=`。
+6. 未帶正確密碼、亦無有效 cookie 時，受保護的 `/admin` 回 **401**、相關 API 回 JSON `未授權`。
 
-**上線後**：請將 `localhost` 換成實際網域，例如：  
-`https://你的網域/admin?secret=＜與 Vercel／主機上 `ADMIN_DASHBOARD_SECRET` 相同＞`  
-（查詢參數的 **值** 就是環境變數 `ADMIN_DASHBOARD_SECRET` 的內容。）
+**上線後**：請將 `localhost` 換成實際網域，例如 **`https://你的網域/admin-login`**；環境變數 **`ADMIN_DASHBOARD_SECRET`** 須在 Vercel（或主機）與本機**一致**（值相同、僅存於 server env）。
 
-**首頁入口**：招生首頁 Footer 最底有低調文字連結「**管理入口**」導向 `/admin`。若瀏覽器尚無有效後台 Cookie，點入後仍會 401；請在網址列使用 **`/admin?secret=＜值＞`**，其中 **`secret` 的查詢值** 須等於環境變數 **`ADMIN_DASHBOARD_SECRET`** 所設定的密碼字串（不是變數名稱本身）。成功後 7 日內可再直接造訪 `/admin`。
+**首頁入口**：招生首頁 Footer 最底「**管理入口**」導向 **`/admin-login`**。若已具備有效 `admin_gate`，造訪 `/admin-login` 會自動導向 `/admin`。
 
 ### 測試報告、影片、跟進
 
@@ -189,7 +204,7 @@ supabase db push
 
 ```text
 app/
-  page.tsx, register/, quiz/, report/, booking/, admin/
+  page.tsx, register/, quiz/, report/, booking/, admin/, admin-login/
   api/register, api/quiz/..., api/report/..., api/booking, api/admin/...
 components/   home, register, quiz, report, booking, admin, ui
 lib/
