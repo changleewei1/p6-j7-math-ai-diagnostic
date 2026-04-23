@@ -2,8 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { FormField } from "@/components/ui/FormField";
 import { FormHint } from "@/components/ui/FormHint";
@@ -52,8 +51,9 @@ function describeBy(errorId: string | null, showHint: boolean, hintId: string) {
 }
 
 export function RegisterForm() {
-  const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  /** 併發第二次 submit 時回傳同一 Promise，讓 RHF 的 isSubmitting 在整段請求期間保持為 true、並避免雙重 POST */
+  const submitRunRef = useRef<Promise<void> | null>(null);
 
   const form = useForm<RegisterBodyInput>({
     resolver: zodResolver(registerBodySchema),
@@ -102,33 +102,48 @@ export function RegisterForm() {
     });
   };
 
-  async function onSubmit(data: RegisterBodyInput) {
-    setSubmitError(null);
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      const json = (await res.json()) as RegisterApiResponse;
-      if (!res.ok || !("success" in json) || !json.success) {
-        const fromServer =
-          json && typeof json === "object" && "message" in json
-            ? (json as { message?: string }).message?.trim()
-            : undefined;
-        const msg =
-          fromServer && fromServer.length > 0
-            ? fromServer
-            : res.status >= 500
-              ? "建立測驗失敗，請稍後再試"
-              : `無法完成登記（${res.status}）`;
-        setSubmitError(msg);
-        return;
-      }
-      router.push(`/quiz/${json.sessionId}`);
-    } catch {
-      setSubmitError("無法連線到伺服器，請檢查網路後再試。");
+  function onSubmit(data: RegisterBodyInput) {
+    if (submitRunRef.current) {
+      return submitRunRef.current;
     }
+    const run = (async () => {
+      setSubmitError(null);
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const json = (await res.json()) as RegisterApiResponse;
+        if (!res.ok || !("success" in json) || !json.success) {
+          const fromServer =
+            json && typeof json === "object" && "message" in json
+              ? (json as { message?: string }).message?.trim()
+              : undefined;
+          const msg =
+            fromServer && fromServer.length > 0
+              ? fromServer
+              : res.status >= 500
+                ? "建立測驗失敗，請稍後再試"
+                : `無法完成登記（${res.status}）`;
+          setSubmitError(msg);
+          return;
+        }
+        const sid = json.sessionId;
+        if (typeof sid !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sid)) {
+          setSubmitError("已儲存資料，但未取得有效的測驗編號。請重新整理頁面或稍後再試；若重複出現請聯絡技術人員。");
+          return;
+        }
+        // 整頁導向，避免在部分環境下 client-side navigation 未載入測驗 chunk 導致停在原頁
+        window.location.assign(`/quiz/${sid}`);
+      } catch {
+        setSubmitError("無法連線到伺服器，請檢查網路後再試。");
+      } finally {
+        submitRunRef.current = null;
+      }
+    })();
+    submitRunRef.current = run;
+    return run;
   }
 
   const field = (name: keyof RegisterBodyInput) => {
@@ -144,6 +159,7 @@ export function RegisterForm() {
       noValidate
       onSubmit={handleSubmit(onSubmit, onInvalid)}
       className="space-y-4"
+      aria-busy={isSubmitting}
     >
       {submitError && (
         <div
@@ -240,7 +256,9 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <h2 className="mt-6 text-sm font-semibold text-slate-800">家長</h2>
+        <h2 id="parent-section" className="mt-6 scroll-mt-24 text-sm font-semibold text-slate-800">
+          家長
+        </h2>
         <div className="mt-3 space-y-4">
           <div data-form-field>
             <FormField
@@ -428,7 +446,7 @@ export function RegisterForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="order-1 min-h-12 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-semibold text-white shadow-md transition enabled:hover:from-emerald-700 enabled:hover:to-teal-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-48"
+            className="order-1 min-h-12 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-semibold text-white shadow-md transition enabled:hover:from-emerald-700 enabled:hover:to-teal-700 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 sm:w-48"
           >
             {isSubmitting ? "建立中…" : "建立測驗並前往"}
           </button>

@@ -4,6 +4,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { FollowUpStatusSelect } from "@/components/admin/FollowUpStatusSelect";
+import { SessionDangerZone } from "@/components/admin/SessionDangerZone";
+import { SessionReportActions } from "@/components/admin/SessionReportActions";
 import type { AdminSessionDetailApiResponse } from "@/types/api";
 import Link from "next/link";
 
@@ -179,6 +181,11 @@ export default function AdminSessionDetailPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="space-y-6 border-t border-slate-200 pt-6">
+        <SessionReportActions sessionId={d.session.id} />
+        <SessionDangerZone sessionId={d.session.id} />
       </div>
     </div>
   );

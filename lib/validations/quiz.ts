@@ -17,3 +17,10 @@ const uuidParam = z.string().uuid("無效的測驗工作階段編號");
 export function parseSessionIdParam(value: string | undefined) {
   return uuidParam.parse(value);
 }
+
+const questionIdParam = z.string().uuid("無效的題目編號");
+
+/** 路徑參數 [questionId] 驗證（題庫 question_bank.id） */
+export function parseQuestionIdParam(value: string | undefined) {
+  return questionIdParam.parse(value);
+}

@@ -76,6 +76,16 @@ export type ReportVideoItem = {
   description: string | null;
 };
 
+/** 依本次作答，自 question_videos 規則式挑選的推薦（與舊有 module 影片庫可並存，前端優先顯示本陣列） */
+export type ReportRecommendedVideoItem = {
+  questionId: string;
+  questionVideoId: string;
+  youtubeUrl: string;
+  title: string | null;
+  reasonType: "wrong_answer" | "low_confidence" | "slow_response";
+  reasonText: string;
+};
+
 export type ReportApiResponse = {
   success: boolean;
   sessionId: string;
@@ -103,8 +113,10 @@ export type ReportApiResponse = {
   }[];
   /** 同 test_sessions.summary_json 完整內容 */
   summary: unknown;
-  /** 由 video_recommendations 依弱點排序後最多 5 筆 */
+  /** 由 video_recommendations 依弱點排序後最多 5 筆（無作答推薦時作為補充） */
   videos: ReportVideoItem[];
+  /** 依 answers + question_videos 規則式推薦，最多 5 筆 */
+  recommendedVideos: ReportRecommendedVideoItem[];
   message?: string;
 };
 
@@ -198,5 +210,58 @@ export type AdminSessionDetailApiResponse = {
 export type AdminFollowUpApiResponse = {
   success: boolean;
   followUpStatus?: FollowUpStatus;
+  message?: string;
+};
+
+export type AdminSessionDeleteApiResponse = {
+  success: boolean;
+  message?: string;
+};
+
+export type AdminQuestionListItem = {
+  id: string;
+  module: QuizModule;
+  difficulty: DifficultyLevel;
+  prompt: string;
+  is_active: boolean;
+  sort_order: number;
+};
+
+export type AdminQuestionsListApiResponse = {
+  success: boolean;
+  /** 僅在 success 為 true 時保證意義；失敗時可為空陣列 */
+  items: AdminQuestionListItem[];
+  message?: string;
+};
+
+export type AdminQuestionVideoDto = {
+  id: string;
+  questionId: string;
+  youtubeUrl: string;
+  title: string | null;
+  priority: number;
+  createdAt: string;
+};
+
+export type AdminQuestionVideosApiResponse = {
+  success: boolean;
+  question: {
+    id: string;
+    module: QuizModule;
+    difficulty: DifficultyLevel;
+    prompt: string;
+  } | null;
+  videos: AdminQuestionVideoDto[];
+  message?: string;
+};
+
+export type AdminQuestionVideoCreateApiResponse = {
+  success: boolean;
+  video?: AdminQuestionVideoDto;
+  message?: string;
+};
+
+export type AdminQuestionVideoDeleteApiResponse = {
+  success: boolean;
   message?: string;
 };

@@ -57,9 +57,13 @@
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`：anon public（第 2 段 API 主要用 service role，但建議一併設定）
    - `SUPABASE_SERVICE_ROLE_KEY`：service role（**僅本機與加密部署環境**，不可曝露在前端或 `NEXT_PUBLIC_`）
 
-3. 修改 `.env.local` 後請重啟 `npm run dev`。
+3. **（建議）** 後臺要複製**對外**完整報告網址（`https://你的網域/report/＜sessionId＞`）予家長時，請設定：
 
-4. **部署到 Vercel 時**，請在專案 **Settings → Environment Variables** 填入與上方相同鍵名（Production／Preview 視需要勾選），儲存後對最新一筆部署 **Redeploy** 才會套用。
+   - `NEXT_PUBLIC_APP_URL`：例如本機 `http://localhost:3000`、上線主網域 `https://你的網站`（**勿**在結尾加斜線）。未設定時，在瀏覽器內操作會**退而求其次**以目前造訪網域組出完整網址；若管理後臺與學生前台網域不同，**務必**設定本變數。
+
+4. 修改 `.env.local` 後請重啟 `npm run dev`。
+
+5. **部署到 Vercel 時**，請在專案 **Settings → Environment Variables** 填入與上方相同鍵名（Production／Preview 視需要勾選），儲存後對最新一筆部署 **Redeploy** 才會套用。
 
 ### Vercel：專案重新命名後請改網址
 
@@ -74,19 +78,26 @@
 
 ## 執行資料庫 migration
 
-依你使用的方式擇一：
+**建議執行順序**（同一 Supabase 專案，依時間序；SQL Editor 或 CLI 擇一）：
+
+1. `202604220001_init_schema.sql` — 主 schema（題庫、測驗、作答等）  
+2. `202604220002_add_marketing_opt_in.sql` — 家長行銷同意  
+3. `202604220003_booking_session_id.sql` — 預約關聯 `session_id`（報告導向預約用）  
+4. `202604220004_conversion_events.sql` — 轉換／埋點  
+5. `202604230001_add_question_videos.sql` — 題目與 YouTube 對應（後臺與報告推薦用）
 
 **A. Supabase 網頁 SQL Editor**  
-打開專案 → SQL → 貼上 `supabase/migrations/202604220001_init_schema.sql` 內容後執行。
+專案 → **SQL** → 依序貼上各檔內容後執行。
 
-**B. Supabase CLI**（本機有安裝時）
+**B. Supabase CLI**（本機有安裝且已 `supabase link` 時）
 
 ```bash
 supabase db push
-# 或 supabase migration up
 ```
 
-實際指令以專案是否已 `supabase link` 為準，請參考 [Supabase 文件](https://supabase.com/docs/guides/cli/local-development)。
+實際指令以專案設定為準，詳見 [Supabase 文件](https://supabase.com/docs/guides/cli/local-development)。
+
+> **路由保護（後臺）**：本專案使用專案根目錄 **`proxy.ts`**（僅攔截 `/admin`、`/api/admin`；**不影響**首頁、`/register`、`/quiz`、`/report`、`/booking`）。舊版 `middleware.ts` 名稱在 Next 16 已可由 proxy 擔任，請勿再加一層攔截全站。
 
 ## 匯入題庫 seed
 
@@ -140,7 +151,7 @@ supabase db push
 - **報告 UI**：頂部 Hero、規則式「診斷摘要」六段文案（`lib/analysis/generateNarrativeSummary.ts`）、五模組卡片、**Recharts** 三圖表（正答率、用時、信心）、風險標籤、課程建議、**影片建議**（`video_recommendations`＋`lib/analysis/selectVideoRecommendations.ts`）、招生 **CTA**（已完成，見下方「預約試聽與聯絡資訊」）。
 - **分析擴充**：`finish` 在 `analyzeSession` 之後，合併敘事、强弱模組、銜接度、建議要點，寫入 `summary_json`（`lib/analysis/enrichSessionReport.ts`）。
 - **行銷同意**：`parents.marketing_opt_in`（`supabase/migrations/202604220002_add_marketing_opt_in.sql`），與 `consent`（個資）分欄；註冊表單以 `marketingOptIn` 送出。
-- **內部後台**：`/admin` 總覽、`/admin/sessions` 列表（關鍵字／狀態／跟進篩選）、`/admin/sessions/[id]` 詳情與**跟進狀態**更新（`follow_up_status`）。存取保護：`proxy.ts` ＋ HttpOnly Cookie **`admin_gate`**（以 `ADMIN_DASHBOARD_SECRET` 經 HMAC 產生 cookie 值）。**建議**：從首頁 Footer「**管理入口**」進入 **`/admin-login`** 輸入密碼；亦可沿用 **`/admin?secret=…`** 一次寫入 cookie。
+- **內部後台**：`/admin` 總覽、`/admin/sessions` 列表（關鍵字／狀態／跟進篩選）、`/admin/sessions/[id]` 詳情與**跟進狀態**更新（`follow_up_status`），以及**報告操作**（新分頁開啟學生報告、一鍵複製報告網址與分享給家長的文案；完整網址建議在環境變數設定 `NEXT_PUBLIC_APP_URL`）與**危險操作**（刪除單筆測驗資料、或刪除該筆學生／家長同配對之所有測驗與名冊）。存取保護：`proxy.ts` ＋ HttpOnly Cookie **`admin_gate`**（以 `ADMIN_DASHBOARD_SECRET` 經 HMAC 產生 cookie 值）。**建議**：從首頁 Footer「**管理入口**」進入 **`/admin-login`** 輸入密碼；亦可沿用 **`/admin?secret=…`** 一次寫入 cookie。
 - **API（admin）**：皆使用 `createAdminSupabaseClient()`，且於各 route handler 內建立。摘要如下：
 
 | 方法 | 路徑 | 說明 |
@@ -148,6 +159,8 @@ supabase db push
 | `GET` | `/api/admin/overview` | 總人數、完成數、平均分、等第分佈、弱點模組排行、跟進分佈、最近 10 筆 |
 | `GET` | `/api/admin/sessions` | 分頁列表；query：`q`, `status`, `followUp`, `page` |
 | `GET` | `/api/admin/sessions/[sessionId]` | 學生／家長、摘要、建議、作答列 |
+| `DELETE` | `/api/admin/sessions/[sessionId]` | 刪除此筆測驗（`answers`／`session_questions`／`recommendations`／`test_sessions` 等隨刪；並清除或解除與本場次之 `conversion_events`、`line_push_logs`、關聯之 `bookings.session_id`）；**保留** `students` 與 `parents` |
+| `DELETE` | `/api/admin/sessions/[sessionId]/full-delete` | 刪除與本場次**同學生＋家長配對**之所有測驗，再刪學生／家長列（僅在無他場關聯時）；併刪關聯轉換事件、推播日誌、解除預約關聯等 |
 | `PATCH` | `/api/admin/sessions/[sessionId]/follow-up` | body: `{ "followUpStatus": "未追蹤" \| "已聯絡" \| "已預約" \| "已報名" }` |
 | `POST` | `/api/admin/login` | body: `{ "secret": "與 ADMIN_DASHBOARD_SECRET 相同" }`；成功寫入 `admin_gate` cookie |
 | `POST` | `/api/admin/logout` | 清除 `admin_gate` cookie |
@@ -208,7 +221,7 @@ app/
   api/register, api/quiz/..., api/report/..., api/booking, api/admin/...
 components/   home, register, quiz, report, booking, admin, ui
 lib/
-  validations/, quiz/, analysis/, admin/, constants/, supabase/
+  validations/, quiz/, analysis/, admin/, report/（`getReportUrl` 等）, constants/, supabase/
 proxy.ts（/admin 與 /api/admin 之簡化驗證）
 types/   sessionAnalysis, database, quiz, api
 scripts/ import-question-bank.ts, import-video-recommendations.ts
@@ -219,6 +232,16 @@ supabase/migrations/
 ### npm scripts 補充
 
 - `npm run seed:videos`：匯入 `data/videoRecommendations.seed.json` 至 `video_recommendations`（可重複執行，以 module+title+url 去重）。
+
+## 正式上線與 Vercel 部署
+
+- **一鍵檢查表**：[`docs/deployment-checklist.md`](./docs/deployment-checklist.md)（GitHub／Vercel 設定、環境變數、Migration 順序、Seed、上線後驗證路徑）
+- **靜態健康頁**：`GET /health`（Deployment OK 提示）  
+- **健康 API**：`GET /api/health` → `{ "success": true, "message": "API OK" }`  
+- **Node 版本**：建議 **20+**（見 `package.json` 的 `engines`；Vercel 可在專案設定中選 Node 20）
+- 部署前請執行 **`npm run build`** 確認可建置；上線分支建議以 **`main`** 為 Production。
+
+上線前請再次確認：若報告或後臺要產生**正確的完整 `https` 分享連結**，務必在 Vercel 設定 **`NEXT_PUBLIC_APP_URL`** 為學生／家長實際造訪的網域。
 
 ## 開發
 

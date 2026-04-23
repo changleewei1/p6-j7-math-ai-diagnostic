@@ -24,27 +24,27 @@ export function Hero() {
             立即開始免費診斷
           </Link>
           <a href="#test-overview" className={CTA_OUTLINE}>
-            了解測驗內容
+            向下滑，先看介紹
           </a>
         </div>
-        <ul className="mx-auto max-w-lg space-y-2 text-left text-sm text-slate-600 md:mx-0 md:max-w-none md:text-center">
-          <li className="flex gap-2 md:justify-center">
-            <span className="text-emerald-600" aria-hidden>
+        <ul className="mx-auto w-max max-w-lg space-y-2 text-left text-sm text-slate-600">
+          <li className="flex items-start gap-2.5">
+            <span className="shrink-0 text-emerald-600" aria-hidden>
               ✔
             </span>
-            名貫補習班教學團隊設計
+            <span>名貫補習班教學團隊設計</span>
           </li>
-          <li className="flex gap-2 md:justify-center">
-            <span className="text-emerald-600" aria-hidden>
+          <li className="flex items-start gap-2.5">
+            <span className="shrink-0 text-emerald-600" aria-hidden>
               ✔
             </span>
-            結合 AI 分析與教學經驗
+            <span>結合 AI 分析與教學經驗</span>
           </li>
-          <li className="flex gap-2 md:justify-center">
-            <span className="text-emerald-600" aria-hidden>
+          <li className="flex items-start gap-2.5">
+            <span className="shrink-0 text-emerald-600" aria-hidden>
               ✔
             </span>
-            已協助上百位學生銜接國一
+            <span>已協助上百位學生銜接國一</span>
           </li>
         </ul>
       </div>

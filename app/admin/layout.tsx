@@ -20,6 +20,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link href="/admin/sessions" className="text-emerald-800 underline">
               測驗列表
             </Link>
+            <Link href="/admin/questions" className="text-emerald-800 underline">
+              題庫
+            </Link>
             <Link href="/" className="text-slate-500 hover:text-slate-800">
               前台首頁
             </Link>

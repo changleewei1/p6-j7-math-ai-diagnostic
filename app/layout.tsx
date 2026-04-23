@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+// 在 TS 入口匯入 Tailwind，由 Node/ bundler 從專案 node_modules 解析；
+// 勿在全域 CSS 內用 @import "tailwindcss"（在部分環境會誤以 ~/Desktop 為 context 而解析失敗）。
+import "tailwindcss/index.css";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,9 +29,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    /* 根節點 suppressHydrationWarning：翻譯類擴充常注入 <html> 的 data-*，與 SSR 不一致 */
     <html
       lang="zh-Hant"
       className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">{children}</body>
     </html>

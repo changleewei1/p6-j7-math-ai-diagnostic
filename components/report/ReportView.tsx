@@ -129,6 +129,7 @@ export function ReportView({ sessionId }: { sessionId: string }) {
       mediumConfidenceCount: 0,
     };
   const videos = data.videos ?? [];
+  const recommendedVideos = data.recommendedVideos ?? [];
   const narrative = data.narrativeSummary;
   const headline = narrative?.headline ?? null;
 
@@ -175,7 +176,7 @@ export function ReportView({ sessionId }: { sessionId: string }) {
 
         <RecommendationSection items={data.recommendations} highlights={data.recommendationHighlights} />
 
-        <VideoRecommendationSection videos={videos} />
+        <VideoRecommendationSection answerBasedVideos={recommendedVideos} moduleVideos={videos} />
 
         <ReportCtaSection sessionId={sessionId} weakestModules={data.weakestModules ?? null} />
       </div>

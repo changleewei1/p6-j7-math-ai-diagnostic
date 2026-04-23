@@ -4,6 +4,7 @@ import {
   inferWeakestModulesFromSummary,
 } from "@/lib/analysis/enrichSessionReport";
 import { selectVideoRecommendations } from "@/lib/analysis/selectVideoRecommendations";
+import { getRecommendedVideosForSession } from "@/lib/report/getRecommendedVideosForSession";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
 import type { SessionSummaryJsonV1 } from "@/types/sessionAnalysis";
@@ -116,6 +117,28 @@ export async function GET(
       }
     }
 
+    let recommendedVideos: {
+      questionId: string;
+      questionVideoId: string;
+      youtubeUrl: string;
+      title: string | null;
+      reasonType: "wrong_answer" | "low_confidence" | "slow_response";
+      reasonText: string;
+    }[] = [];
+    try {
+      const picked = await getRecommendedVideosForSession(supabase, sessionId, 5);
+      recommendedVideos = picked.map((p) => ({
+        questionId: p.questionId,
+        questionVideoId: p.questionVideoId,
+        youtubeUrl: p.youtubeUrl,
+        title: p.title,
+        reasonType: p.reasonType,
+        reasonText: p.reasonText,
+      }));
+    } catch (e) {
+      console.error("report GET: recommended videos", e);
+    }
+
     return NextResponse.json({
       success: true,
       sessionId: session.id,
@@ -138,6 +161,7 @@ export async function GET(
       recommendations: recs ?? [],
       summary: rawJson,
       videos,
+      recommendedVideos,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "伺服器錯誤";

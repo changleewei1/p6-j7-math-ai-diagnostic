@@ -146,6 +146,27 @@ export type QuestionBankUpdate = Partial<
 > & { updated_at?: string };
 
 // ---------------------------------------------------------------------------
+// question_videos（題目 ↔ YouTube 補充影片）
+// ---------------------------------------------------------------------------
+export interface QuestionVideoRow {
+  id: string;
+  question_id: string;
+  youtube_url: string;
+  title: string | null;
+  priority: number;
+  created_at: string;
+}
+
+export type QuestionVideoInsert = {
+  id?: string;
+  question_id: string;
+  youtube_url: string;
+  title?: string | null;
+  priority?: number;
+  created_at?: string;
+};
+
+// ---------------------------------------------------------------------------
 // session_questions
 // ---------------------------------------------------------------------------
 export interface SessionQuestionRow {

@@ -101,7 +101,30 @@ export function QuizSessionClient({ sessionId }: Props) {
           return;
         }
 
-        const bodyCurrent = await loadCurrent();
+        // 剛寫入 session_questions 後，少數環境讀到「尚未初始化」；短重試幾次再顯示錯誤
+        let bodyCurrent: QuizCurrentApiResponse | null = null;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 300));
+          }
+          const resCurrent = await fetch(`/api/quiz/${sessionId}/current`);
+          const body = await readJson<QuizCurrentApiResponse & { message?: string }>(resCurrent);
+          if (resCurrent.ok && body?.success) {
+            bodyCurrent = body;
+            break;
+          }
+          const msg = typeof body?.message === "string" ? body.message : "";
+          const retryable = resCurrent.status === 404 && msg.includes("尚未初始化");
+          if (retryable && attempt < 3) {
+            continue;
+          }
+          const m = msg || `讀取題目失敗（${resCurrent.status}）`;
+          if (!cancelled) {
+            setErrorMessage(m);
+            setPhase("error");
+          }
+          return;
+        }
         if (cancelled || !bodyCurrent) return;
 
         if (bodyCurrent.completed) {
@@ -219,6 +242,24 @@ export function QuizSessionClient({ sessionId }: Props) {
         <SectionCard>
           <h2 className="text-sm font-semibold text-rose-900">目前無法顯示測驗</h2>
           <p className="mt-2 text-sm text-slate-600">{errorMessage}</p>
+          {/題庫|匯入|seed|不足/i.test(errorMessage) && (
+            <p className="mt-2 text-xs text-slate-500">
+              開發者請在本機專案執行匯入題庫腳本（如 README 的{" "}
+              <code className="rounded bg-slate-100 px-1">npm run seed:questions</code>），並確認
+              <code className="rounded bg-slate-100 px-1">question_bank</code> 內有足夠模組與難度題目。
+            </p>
+          )}
+          <p className="mt-4">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.reload();
+              }}
+              className="min-h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
+            >
+              重新載入此頁
+            </button>
+          </p>
         </SectionCard>
       </div>
     );
