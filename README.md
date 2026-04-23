@@ -243,6 +243,8 @@ supabase/migrations/
 
 上線前請再次確認：若報告或後臺要產生**正確的完整 `https` 分享連結**，務必在 Vercel 設定 **`NEXT_PUBLIC_APP_URL`** 為學生／家長實際造訪的網域。
 
+**Tailwind 樣式**：`app/globals.css` 使用 `@import "tailwindcss" source("..");`，且 `tailwindcss`／`@tailwindcss/postcss` 已列於 **`dependencies`**，以避免正式站與本機路徑不一致時首頁「無樣式」。詳見 `docs/deployment-checklist.md` §7。
+
 ## 開發
 
 ```bash

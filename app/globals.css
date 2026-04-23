@@ -1,5 +1,9 @@
-/* 單一樣式入口；由 PostCSS + @tailwindcss/postcss 處理。勿再於 layout 另匯入 tailwindcss/index.css，以免 Vercel 正式建置解析失敗導致「無樣式」。 */
-@import "tailwindcss";
+/*
+  單一樣式入口。務必帶 source("..")：樣式檔在 app/ 底下時，需以專案根為掃描起點，
+  否則在部分 CI／Vercel 環境下 class 掃描範圍錯亂，產生「幾乎沒有 utility」的 CSS（首頁像純 HTML）。
+  參考：Tailwind v4 @import "tailwindcss" source(…) 與偵測 class 說明。
+ */
+@import "tailwindcss" source("..");
 
 :root {
   --background: #ffffff;

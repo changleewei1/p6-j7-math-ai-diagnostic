@@ -78,7 +78,20 @@
 
 ---
 
-## 7. 部署成功後驗證
+## 7. 樣式（Tailwind）在 Vercel 務必可用
+
+本專案已做兩件事（請勿隨意還原）：
+
+1. **`app/globals.css`** 使用 `@import "tailwindcss" source("..");`  
+   全域 CSS 置於 `app/` 子目錄時，應讓掃描**以專案根為基準**，否則在 Linux／CI 上可能幾乎掃不到 `app/`、`components/` 內的 class，產出「空 utility」→ 首頁像純 HTML。
+2. **`tailwindcss` 與 `@tailwindcss/postcss` 列在 `dependencies`**（非僅 `devDependencies`）  
+   正式建置階段一定會安裝，避免少數環境省略 dev 依賴導致 PostCSS 外掛缺失。
+
+若上線後仍無樣式：檢查該次 **Build Logs** 是否有 PostCSS／Tailwind 錯誤，並強制重新整理或略過 CDN 快取後再試。
+
+---
+
+## 8. 部署成功後驗證
 
 於瀏覽器以 **正式網域** 檢查（或 Vercel 提供的 `*.vercel.app`，以目前專案綁定者為準）：
 
@@ -94,7 +107,7 @@
 
 ---
 
-## 8. 上線前最後提醒
+## 9. 上線前最後提醒
 
 1. **GitHub `main` 必須是你要上線的 commit。**
 2. Vercel **Production** 需綁定 **`main`（或你們共識的正式分支）**。
