@@ -34,8 +34,6 @@ const CARDS = [
   },
 ] as const;
 
-const sectionInView = { once: true, amount: 0.25, margin: "0px 0px -80px 0px" };
-
 export function ValueSection() {
   const reduceMotion = useReducedMotion();
 
@@ -46,13 +44,7 @@ export function ValueSection() {
       aria-labelledby="value-heading"
     >
       <div className="mx-auto max-w-5xl">
-        <motion.header
-          className="mb-6 space-y-2 text-center md:mb-8"
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-          viewport={sectionInView}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        >
+        <header className="mb-6 space-y-2 text-center md:mb-8">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-emerald-800 shadow-sm backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
             數位診斷 · 即時回饋
@@ -66,16 +58,14 @@ export function ValueSection() {
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-slate-600">
             以 AI 診斷流程為核心，讓學習者快速掌握起點、釐清弱點，並銜接下一步。
           </p>
-        </motion.header>
+        </header>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-5">
           {CARDS.map((c, i) => (
             <motion.article
               key={c.title}
               className="group relative min-h-0"
-              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-              whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={sectionInView}
+              initial={false}
               transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
               whileHover={
                 reduceMotion

@@ -25,8 +25,6 @@ const STEPS = [
   },
 ] as const;
 
-const sectionInView = { once: true, amount: 0.2, margin: "0px 0px -80px 0px" };
-
 function StepConnector() {
   return (
     <div
@@ -56,9 +54,7 @@ function StepCard({
   return (
     <motion.div
       className="relative h-full"
-      initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-      viewport={sectionInView}
+      initial={false}
       transition={{ duration: 0.45, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
       whileHover={
         reduceMotion ? undefined : { y: -3, scale: 1.01, transition: { duration: 0.2 } }
@@ -99,13 +95,7 @@ export function StepsSection() {
       aria-labelledby="steps-heading"
     >
       <div className="mx-auto max-w-5xl">
-        <motion.header
-          className="mb-6 space-y-2 text-center md:mb-8"
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-          viewport={sectionInView}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        >
+        <header className="mb-6 space-y-2 text-center md:mb-8">
           <h2
             id="steps-heading"
             className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl"
@@ -115,7 +105,7 @@ export function StepsSection() {
           <p className="mx-auto max-w-xl text-sm text-slate-600">
             流程清楚、好上手，幾分鐘內即可完成診斷與回饋。
           </p>
-        </motion.header>
+        </header>
 
         {/* 桌機：橫向 step flow + 連線 */}
         <div className="hidden items-stretch gap-2 md:grid md:grid-cols-[1fr_40px_1fr_40px_1fr] md:gap-0">
@@ -137,13 +127,7 @@ export function StepsSection() {
         <ol className="space-y-0 md:hidden">
           {STEPS.map((item, index) => (
             <li key={item.n}>
-              <motion.div
-                className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-emerald-50/20 p-4 shadow-md shadow-slate-200/30 ring-1 ring-slate-100/50"
-                initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={sectionInView}
-                transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-              >
+              <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-emerald-50/20 p-4 shadow-md shadow-slate-200/30 ring-1 ring-slate-100/50">
                 <div className="flex gap-3">
                   <div className="flex shrink-0 flex-col items-center">
                     <div className="grid h-10 w-10 place-items-center rounded-2xl border border-emerald-200/50 bg-gradient-to-br from-emerald-600 to-teal-600 text-sm font-bold text-white shadow">
@@ -162,7 +146,7 @@ export function StepsSection() {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
               {index < STEPS.length - 1 && (
                 <div className="flex justify-center py-1.5" aria-hidden>
                   <div className="flex flex-col items-center text-emerald-500/50">
