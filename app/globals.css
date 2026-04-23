@@ -1,5 +1,4 @@
-/* 用相對路徑，避免上層目錄 package.json 將 Desktop 當成 workspace 時，誤在 /Users/.../Desktop 解析 tailwindcss */
-@import "../node_modules/tailwindcss/index.css";
+@import "tailwindcss";
 
 :root {
   --background: #ffffff;
