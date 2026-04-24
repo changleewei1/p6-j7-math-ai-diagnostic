@@ -65,6 +65,19 @@
 
 5. **部署到 Vercel 時**，請在專案 **Settings → Environment Variables** 填入與上方相同鍵名（Production／Preview 視需要勾選），儲存後對最新一筆部署 **Redeploy** 才會套用。
 
+### 家長註冊成功 → 管理者 Email 通知（Resend）
+
+- 家長在 **`/register` 填寫資料**並成功建立 `test_sessions` 後，伺服器會以 [Resend](https://resend.com) 寄出通知信（主旨含「名貫補習班」與學生／家長摘要）；**`RESEND_API_KEY` 僅在伺服器使用，勿加 `NEXT_PUBLIC_`，不會洩露到前端**。
+- 若未設定金鑰、收信者或寄件者，僅在伺服器 log 中提示、**不會**讓註冊失敗。
+- **必要變數**（見 `.env.example`）  
+  - `RESEND_API_KEY`：Resend 後台產生的 API Key  
+  - `ADMIN_NOTIFY_EMAIL`：管理者收信信箱（範本預設 **chang.leewei@msa.hinet.net**，可依實務修改）  
+  - `EMAIL_FROM`：寄件者；測試階段可填 `onboarding@resend.dev`，上線改為已驗證網域
+- 通知信內的「後台查看」按鈕網址格式為：  
+  `{NEXT_PUBLIC_APP_URL}/admin-login?redirect=/admin/sessions/{sessionId}`  
+  家長需先以管理密碼登入，登入成功後會導向該筆測驗在後臺的脈絡。請在正式站設定正確的 **`NEXT_PUBLIC_APP_URL`**。若未設定，信中會改顯示 session 編號供手動查詢（並嘗試以 `VERCEL_URL` 在 Vercel 上補出預覽網址）。
+- **本機測試寄信**：在 `development` 下可對 `POST /api/test-email` 送出一封內建假資料的測試信；**`production` 固定回 403**。
+
 ### Vercel：專案重新命名後請改網址
 
 若 Vercel 專案曾由舊名稱改名（例如由 `project-a1a4s` 改為 `p6-j7-math-diagnostic`），**舊子網域**（如 `project-a1a4s.vercel.app`）**通常不再指向目前部署**，瀏覽會出現平台層級 **`404: NOT_FOUND`**（非本專案 Next 的錯誤頁）。

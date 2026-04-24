@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function AdminLoginForm() {
+type Props = {
+  /** 登入成功後導向（已由伺服器驗證為安全路徑） */
+  postLoginPath?: string;
+};
+
+export function AdminLoginForm({ postLoginPath = "/admin" }: Props) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +32,7 @@ export function AdminLoginForm() {
         return;
       }
       if (res.ok && data.success) {
-        router.push("/admin");
+        router.push(postLoginPath);
         router.refresh();
         return;
       }

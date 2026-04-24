@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEFAULT_ADAPTIVE_VERSION, DEFAULT_TOTAL_QUESTIONS } from "@/lib/constants/quiz";
+import { sendAdminNewLeadEmail } from "@/lib/notifications/sendAdminNewLeadEmail";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { registerBodySchema } from "@/lib/validations/register";
 
@@ -107,6 +108,17 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    await sendAdminNewLeadEmail({
+      sessionId: session.id,
+      studentName: d.studentName,
+      school: d.school ?? null,
+      parentName: d.parentName,
+      parentPhone: d.parentPhone,
+      parentEmail: d.email ?? null,
+      lineId: d.lineId ?? null,
+      referrerName: d.referrerName ?? null,
+    });
 
     return NextResponse.json({
       success: true,
