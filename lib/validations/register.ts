@@ -74,6 +74,22 @@ export const registerBodySchema = z.object({
     z.union([z.null(), z.string().email("Email 格式不正確").max(200, "Email 內容過長")]),
   ),
 
+  /** 介紹人（選填，寫入 students.referrer_*） */
+  referrerName: z.preprocess(
+    (v) => {
+      const s = strIn(v, "").trim();
+      return s === "" ? undefined : s;
+    },
+    z.union([z.undefined(), z.string().max(200, "介紹人姓名過長")]),
+  ),
+  referrerContact: z.preprocess(
+    (v) => {
+      const s = strIn(v, "").trim();
+      return s === "" ? undefined : s;
+    },
+    z.union([z.undefined(), z.string().max(300, "介紹人聯絡方式內容過長")]),
+  ),
+
   /**
    * 行銷／訊息同意：願意接收診斷報告與課程相關建議等（寫入 parents.marketing_opt_in）
    * JSON 若缺鍵，補上 false

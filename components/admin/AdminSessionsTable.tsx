@@ -15,6 +15,8 @@ export function AdminSessionsTable({ items }: { items: AdminSessionListItem[] })
             <th className={wrap}>學生</th>
             <th className={wrap}>家長</th>
             <th className={wrap}>手機</th>
+            <th className={wrap}>介紹人</th>
+            <th className={wrap}>介紹人聯絡</th>
             <th className={wrap}>建立</th>
             <th className={wrap}>狀態</th>
             <th className={wrap}>等第</th>
@@ -32,6 +34,12 @@ export function AdminSessionsTable({ items }: { items: AdminSessionListItem[] })
               </td>
               <td className={wrap + " max-w-[8rem] truncate"}>{r.parentName}</td>
               <td className={wrap}>{r.parentPhone}</td>
+              <td className={wrap + " max-w-[7rem] truncate text-slate-700"}>
+                {r.referrerName?.trim() ? r.referrerName : "—"}
+              </td>
+              <td className={wrap + " max-w-[8rem] truncate text-slate-600"}>
+                {r.referrerContact?.trim() ? r.referrerContact : "—"}
+              </td>
               <td className={wrap + " text-slate-500"}>
                 {new Date(r.createdAt).toLocaleString("zh-TW", { dateStyle: "short", timeStyle: "short" })}
               </td>

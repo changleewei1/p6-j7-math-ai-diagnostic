@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
         name: d.studentName,
         school: d.school ?? null,
         grade: d.grade || "小六",
+        referrer_name: d.referrerName ?? null,
+        referrer_contact: d.referrerContact ?? null,
       })
       .select("id")
       .single();

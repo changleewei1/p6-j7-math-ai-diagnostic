@@ -22,6 +22,10 @@ export interface StudentRow {
   name: string;
   school: string | null;
   grade: string;
+  /** 介紹人姓名（選填） */
+  referrer_name: string | null;
+  /** 介紹人聯絡方式（選填） */
+  referrer_contact: string | null;
   created_at: string;
 }
 
@@ -30,6 +34,8 @@ export type StudentInsert = {
   name: string;
   school?: string | null;
   grade?: string;
+  referrer_name?: string | null;
+  referrer_contact?: string | null;
   created_at?: string;
 };
 

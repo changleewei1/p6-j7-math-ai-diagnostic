@@ -147,6 +147,10 @@ export type AdminSessionListItem = {
   studentName: string;
   parentName: string;
   parentPhone: string;
+  /** 介紹人姓名 */
+  referrerName: string | null;
+  /** 介紹人聯絡方式 */
+  referrerContact: string | null;
   overallLevel: string | null;
   overallScore: string | null;
   followUpStatus: FollowUpStatus;

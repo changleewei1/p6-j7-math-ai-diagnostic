@@ -21,6 +21,8 @@ const ORDERED_FIELDS: (keyof RegisterBodyInput)[] = [
   "parentPhone",
   "lineId",
   "email",
+  "referrerName",
+  "referrerContact",
   "marketingOptIn",
   "agreePrivacy",
 ];
@@ -67,6 +69,8 @@ export function RegisterForm() {
       parentPhone: "",
       lineId: "",
       email: "",
+      referrerName: "",
+      referrerContact: "",
       marketingOptIn: false,
       agreePrivacy: false,
     },
@@ -369,6 +373,70 @@ export function RegisterForm() {
               />
               <FormHint id={getHintId("email")}>有填寫則以 Email 格式驗證；留空則不寄至信箱。</FormHint>
             </FormField>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-2">
+          <p className="text-sm font-medium text-slate-800">介紹人（選填）</p>
+          <p className="text-sm leading-relaxed text-emerald-800/90">
+            填寫介紹人可參加推薦獎勵
+          </p>
+          <div className="mt-3 space-y-4">
+            <div data-form-field>
+              <FormField
+                label="介紹人姓名"
+                htmlFor={getInputId("referrerName")}
+                optional
+                errorId={getErrorId("referrerName")}
+                error={field("referrerName").message}
+              >
+                <input
+                  id={getInputId("referrerName")}
+                  type="text"
+                  autoComplete="name"
+                  className={field("referrerName").hasError ? inputError : inputNormal}
+                  placeholder="有推薦人則可填寫"
+                  aria-invalid={field("referrerName").hasError}
+                  aria-describedby={describeBy(
+                    field("referrerName").hasError ? getErrorId("referrerName") : null,
+                    true,
+                    getHintId("referrerName"),
+                  )}
+                  {...register("referrerName")}
+                />
+                <FormHint id={getHintId("referrerName")}>
+                  與實際推薦人姓名一致尤佳，以利獎勵核對。
+                </FormHint>
+              </FormField>
+            </div>
+            <div data-form-field>
+              <FormField
+                label="介紹人聯絡方式"
+                htmlFor={getInputId("referrerContact")}
+                optional
+                errorId={getErrorId("referrerContact")}
+                error={field("referrerContact").message}
+              >
+                <input
+                  id={getInputId("referrerContact")}
+                  type="text"
+                  inputMode="text"
+                  autoComplete="off"
+                  className={field("referrerContact").hasError ? inputError : inputNormal}
+                  placeholder="例：手機、LINE 或 Email"
+                  aria-invalid={field("referrerContact").hasError}
+                  aria-describedby={describeBy(
+                    field("referrerContact").hasError ? getErrorId("referrerContact") : null,
+                    true,
+                    getHintId("referrerContact"),
+                  )}
+                  {...register("referrerContact")}
+                />
+                <FormHint id={getHintId("referrerContact")}>
+                  方便聯絡推薦人時可填；可為電話、LINE 或 Email 等任一字串。
+                </FormHint>
+              </FormField>
+            </div>
           </div>
         </div>
 

@@ -53,7 +53,7 @@ export default function AdminSessionsListPage() {
       <AdminPageHeader title="測驗列表" subtitle="搜尋、篩選、前往個別詳情" />
       <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-end sm:flex-wrap">
         <div className="min-w-0 flex-1">
-          <label className="text-xs text-slate-500">關鍵字（學生／家長／手機）</label>
+          <label className="text-xs text-slate-500">關鍵字（學生／家長／手機／介紹人）</label>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}

@@ -45,18 +45,31 @@ export async function GET(request: NextRequest) {
     const rows = raw ?? [];
     const sids = Array.from(new Set(rows.map((r) => r.student_id)));
     const pids = Array.from(new Set(rows.map((r) => r.parent_id)));
-    const { data: stuData } = await supabase.from("students").select("id, name").in("id", sids);
+    const { data: stuData } = await supabase
+      .from("students")
+      .select("id, name, referrer_name, referrer_contact")
+      .in("id", sids);
     const { data: parData } = await supabase
       .from("parents")
       .select("id, name, phone, marketing_opt_in")
       .in("id", pids);
-    const stuMap = new Map((stuData ?? []).map((s) => [s.id, s.name]));
+    const stuMap = new Map(
+      (stuData ?? []).map((s) => [
+        s.id,
+        {
+          name: s.name,
+          referrer_name: s.referrer_name as string | null,
+          referrer_contact: s.referrer_contact as string | null,
+        },
+      ]),
+    );
     const parMap = new Map(
       (parData ?? []).map((p) => [p.id, { name: p.name, phone: p.phone, marketing_opt_in: p.marketing_opt_in }]),
     );
 
     const enriched = rows.map((r) => {
-      const sn = stuMap.get(r.student_id) ?? "";
+      const stu = stuMap.get(r.student_id);
+      const sn = stu?.name ?? "";
       const p = parMap.get(r.parent_id);
       return {
         id: r.id,
@@ -65,6 +78,8 @@ export async function GET(request: NextRequest) {
         studentName: sn,
         parentName: p?.name ?? "",
         parentPhone: p?.phone ?? "",
+        referrerName: stu?.referrer_name ?? null,
+        referrerContact: stu?.referrer_contact ?? null,
         marketingOptIn: p?.marketing_opt_in ?? false,
         overallLevel: r.overall_level,
         overallScore: r.overall_score != null ? String(r.overall_score) : null,
@@ -87,10 +102,14 @@ export async function GET(request: NextRequest) {
 
     const matchesQ = (r: (typeof enriched)[0]) => {
       if (!q) return true;
+      const refN = (r.referrerName ?? "").toLowerCase();
+      const refC = (r.referrerContact ?? "").toLowerCase();
       return (
         r.studentName.toLowerCase().includes(q) ||
         r.parentName.toLowerCase().includes(q) ||
-        r.parentPhone.replace(/\D/g, "").includes(q.replace(/\D/g, ""))
+        r.parentPhone.replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
+        refN.includes(q) ||
+        refC.includes(q)
       );
     };
 
